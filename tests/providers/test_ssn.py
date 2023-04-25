@@ -1271,3 +1271,50 @@ class TestLvLV(unittest.TestCase):
     def test_vat_id(self):
         for _ in range(100):
             assert re.search(r"^LV\d{11}$", self.fake.vat_id())
+
+
+class TestDkDKSsnProvider(unittest.TestCase):
+    def setUp(self):
+        self.fake = Faker('dk_DK')
+        self.pattern = r'\A(0[1-9]|[1-2][0-9]|3[0-1])(0[1-9]|1[0-2])\d{2}-?\d{4}\Z'
+
+    def test_cpr_with_no_arguments(self):
+        for _ in range(100):
+            cpr = self.fake.cpr()
+            self.assertRegex(cpr, self.pattern)
+
+    def test_cpr_with_gender_and_birthday(self):
+        birthday = datetime.date(1990, 3, 5)
+        cpr_male = self.fake.cpr(birthday=birthday, gender='male')
+        cpr_female = self.fake.cpr(birthday=birthday, gender='female')
+
+        self.assertEqual(cpr_male[:6], '050390')
+        self.assertEqual(cpr_female[:6], '050390')
+        self.assertTrue(int(cpr_male[-1]) % 2 == 1)
+        self.assertTrue(int(cpr_female[-1]) % 2 == 0)
+
+    def test_cpr_with_formatted(self):
+        cpr = self.fake.cpr(formatted=True)
+        pattern = r'\A(0[1-9]|[1-2][0-9]|3[0-1])(0[1-9]|1[0-2])\d{2}-\d{4}\Z'
+        self.assertRegex(cpr, pattern)
+
+    def test_cpr_with_gender(self):
+        cpr_male = self.fake.cpr(gender='male')
+        cpr_female = self.fake.cpr(gender='female')
+
+        self.assertTrue(int(cpr_male[-1]) % 2 == 1)
+        self.assertTrue(int(cpr_female[-1]) % 2 == 0)
+
+    def test_cpr_with_birthday(self):
+        birthday = datetime.date(1985, 6, 15)
+        cpr = self.fake.cpr(birthday=birthday)
+
+        self.assertEqual(cpr[:6], '150685')
+
+    def test_cpr_with_invalid_gender(self):
+        with self.assertRaises(ValueError):
+            self.fake.cpr(gender='invalid')
+
+    def test_cpr_with_invalid_birthday(self):
+        with self.assertRaises(ValueError):
+            self.fake.cpr(birthday=datetime.date(1700, 1, 1))
